@@ -1,4 +1,4 @@
-use std::{cmp::min, io::Write, num::ParseIntError};
+use std::{cmp::min, io::Write};
 
 use crate::{lexer::Lexer, token::TokenKind};
 

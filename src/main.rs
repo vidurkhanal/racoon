@@ -1,6 +1,7 @@
+pub mod ast;
 pub mod lexer;
 mod repl;
-mod token;
+pub mod token;
 
 #[macro_use(phf_map)]
 extern crate phf;
