@@ -1,9 +1,10 @@
-mod Token;
-mod lexer;
+pub mod lexer;
+mod repl;
+mod token;
 
 #[macro_use(phf_map)]
 extern crate phf;
 
 fn main() {
-    println!("Hello, world!");
+    repl::REPL::default().run();
 }

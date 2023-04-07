@@ -1,6 +1,6 @@
-use crate::Token::{lookup_ident, Token, TokenKind};
+use crate::token::{lookup_ident, Token, TokenKind};
 
-struct Lexer {
+pub struct Lexer {
     input: String,
     position: usize,
     read_position: usize,
@@ -8,7 +8,7 @@ struct Lexer {
 }
 
 impl Lexer {
-    fn new(input: &str) -> Self {
+    pub fn new(input: &str) -> Self {
         let mut lexer = Self {
             input: String::from(input),
             position: 0,
@@ -39,7 +39,7 @@ impl Lexer {
         }
     }
 
-    fn next_token(&mut self) -> Token {
+    pub fn next_token(&mut self) -> Token {
         self.skip_whitespace();
 
         let next_tok = match self.ch {
@@ -291,6 +291,7 @@ mod lexer_test {
             (TokenKind::NEQ, "!="),
             (TokenKind::INT, "9"),
             (TokenKind::SEMICOLON, ";"),
+            (TokenKind::EOF, " "),
         ];
         let mut l = Lexer::new(input);
         for (i, tt) in tests.iter().enumerate() {
