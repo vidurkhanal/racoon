@@ -1,6 +1,6 @@
 use std::{cmp::min, io::Write};
 
-use crate::{lexer::Lexer, token::TokenKind};
+use crate::{lexer::Lexer, tkn::TokenKind};
 
 pub struct REPL {
     pub command_buffer: Vec<String>,

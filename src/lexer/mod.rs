@@ -1,4 +1,4 @@
-use crate::token::{lookup_ident, Token, TokenKind};
+use crate::tkn::{lookup_ident, Token, TokenKind};
 
 pub struct Lexer {
     input: String,

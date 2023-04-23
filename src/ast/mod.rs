@@ -1,4 +1,6 @@
-use crate::token;
+use std::{any::Any, fmt::Debug};
+
+use crate::tkn::Token;
 
 pub trait Node {
     fn token_literal(&self) -> String;
@@ -6,12 +8,14 @@ pub trait Node {
 
 pub trait Statement: Node {
     fn statement_node(&self);
+    fn as_any(&self) -> &dyn Any;
 }
 
-pub trait Expression: Node {
+pub trait Expression: Node + Debug {
     fn expression_node(&self);
 }
 
+#[derive(Default)]
 pub struct Program {
     pub statements: Vec<Box<dyn Statement>>,
 }
@@ -25,10 +29,25 @@ impl Node for Program {
         }
     }
 }
+#[derive(Debug, Clone)]
 
 pub struct Identifier {
-    token: token::Token,
-    value: String,
+    pub token: Token,
+    pub value: String,
+}
+
+impl Default for Identifier {
+    fn default() -> Self {
+        Self {
+            token: Token::default(),
+            value: " ".to_string(),
+        }
+    }
+}
+impl Identifier {
+    pub fn new(token: Token, value: String) -> Self {
+        Self { token, value }
+    }
 }
 
 impl Expression for Identifier {
@@ -41,18 +60,21 @@ impl Node for Identifier {
     }
 }
 
-pub struct LetStatement<'a> {
-    token: token::Token,
-    name: &'a Identifier,
-    value: dyn Expression,
+#[derive(Debug)]
+pub struct LetStatement {
+    pub token: Token,
+    pub name: Option<Identifier>,
+    pub value: Option<Box<dyn Expression>>,
 }
 
-impl Statement for LetStatement<'_> {
-    fn statement_node(&self) {}
-}
-
-impl Node for LetStatement<'_> {
+impl Node for LetStatement {
     fn token_literal(&self) -> String {
         self.token.literal.clone()
+    }
+}
+impl Statement for LetStatement {
+    fn statement_node(&self) {}
+    fn as_any(&self) -> &dyn Any {
+        self
     }
 }
