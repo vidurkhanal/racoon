@@ -1,4 +1,4 @@
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Debug, Eq, Hash, PartialEq, Clone, Copy)]
 pub enum TokenKind {
     ILLEGAL,
     EOF,
@@ -19,12 +19,16 @@ pub enum TokenKind {
     FUNCTION,
     LET,
     LT,
+    LTE,
     GT,
-    TRUE,
-    FALSE,
+    GTE,
+    TRUE(bool),
+    FALSE(bool),
     IF,
     ELSE,
     RETURN,
     EQ,
     NEQ,
+    BLANK,
+    STRING,
 }

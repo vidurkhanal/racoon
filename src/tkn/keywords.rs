@@ -3,8 +3,8 @@ use super::token_kind::TokenKind;
 static KEYWORDS_MAP: phf::Map<&'static str, TokenKind> = phf_map! {
     "func" => TokenKind::FUNCTION,
     "let" => TokenKind::LET,
-    "true" => TokenKind::TRUE,
-    "false" => TokenKind::FALSE,
+    "true" => TokenKind::TRUE(true),
+    "false" => TokenKind::FALSE(false),
     "if" => TokenKind::IF,
     "else" => TokenKind::ELSE,
     "return" => TokenKind::RETURN,

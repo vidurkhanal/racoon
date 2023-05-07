@@ -1,139 +1,295 @@
-use crate::tkn::{lookup_ident, Token, TokenKind};
+use crate::tkn::{Token, TokenKind};
 
-pub struct Lexer {
-    input: String,
-    position: usize,
-    read_position: usize,
+pub struct Lexer<'a> {
+    input: &'a str,
+    pos: usize,
+    peek_pos: usize,
     ch: u8,
 }
 
-impl Lexer {
-    pub fn new(input: &str) -> Self {
-        let mut lexer = Self {
-            input: String::from(input),
-            position: 0,
-            read_position: 0,
+impl<'a> Lexer<'a> {
+    pub fn new(input: &'a str) -> Self {
+        let mut lexer = Lexer {
+            input,
+            pos: 0,
+            peek_pos: 0,
             ch: 0,
         };
 
         lexer.read_char();
-        lexer
+
+        return lexer;
     }
 
     fn read_char(&mut self) {
-        if self.read_position >= self.input.len() {
+        if self.peek_pos >= self.input.len() {
             self.ch = 0;
         } else {
-            self.ch = self.input.as_bytes()[self.read_position];
+            self.ch = self.input.as_bytes()[self.peek_pos];
         }
-
-        self.position = self.read_position;
-        self.read_position += 1;
+        self.pos = self.peek_pos;
+        self.peek_pos += 1;
     }
 
-    fn peek_char(&mut self) -> u8 {
-        if self.read_position >= self.input.len() {
-            0
+    fn nextch(&mut self) -> u8 {
+        if self.peek_pos >= self.input.len() {
+            return 0;
         } else {
-            self.input.as_bytes()[self.read_position]
+            return self.input.as_bytes()[self.peek_pos];
+        }
+    }
+
+    fn nextch_is(&mut self, ch: u8) -> bool {
+        self.nextch() == ch
+    }
+
+    fn skip_whitespace(&mut self) {
+        loop {
+            match self.ch {
+                b' ' | b'\t' => {
+                    self.read_char();
+                }
+                _ => {
+                    break;
+                }
+            }
         }
     }
 
     pub fn next_token(&mut self) -> Token {
         self.skip_whitespace();
 
-        let next_tok = match self.ch {
+        let tok = match self.ch {
             b'=' => {
-                if self.peek_char() == b'=' {
-                    let ch = self.ch;
+                if self.nextch_is(b'=') {
                     self.read_char();
-                    let mut literal = String::from(ch as char);
-                    literal.push(self.ch as char);
-                    Token::new(TokenKind::EQ, literal)
+                    Token {
+                        kind: TokenKind::EQ,
+                        literal: "==".to_string(),
+                    }
                 } else {
-                    Token::new(TokenKind::ASSIGN, String::from(self.ch as char))
+                    Token {
+                        kind: TokenKind::ASSIGN,
+                        literal: "=".to_string(),
+                    }
                 }
             }
-            b';' => Token::new(TokenKind::SEMICOLON, String::from(self.ch as char)),
-            b'(' => Token::new(TokenKind::LPAREN, String::from(self.ch as char)),
-            b')' => Token::new(TokenKind::RPAREN, String::from(self.ch as char)),
-            b',' => Token::new(TokenKind::COMMA, String::from(self.ch as char)),
-            b'+' => Token::new(TokenKind::PLUS, String::from(self.ch as char)),
-            b'{' => Token::new(TokenKind::LBRACE, String::from(self.ch as char)),
-            b'}' => Token::new(TokenKind::RBRACE, String::from(self.ch as char)),
-            b'-' => Token::new(TokenKind::MINUS, String::from(self.ch as char)),
+            b'+' => Token {
+                kind: TokenKind::PLUS,
+                literal: "+".to_string(),
+            },
+            b'-' => Token {
+                kind: TokenKind::MINUS,
+                literal: "-".to_string(),
+            },
             b'!' => {
-                if self.peek_char() == b'=' {
-                    let ch = self.ch;
+                if self.nextch_is(b'=') {
                     self.read_char();
-                    let mut literal = String::from(ch as char);
-                    literal.push(self.ch as char);
-                    Token::new(TokenKind::NEQ, literal)
+                    Token {
+                        kind: TokenKind::NEQ,
+                        literal: "!=".to_string(),
+                    }
                 } else {
-                    Token::new(TokenKind::BANG, String::from(self.ch as char))
+                    Token {
+                        kind: TokenKind::BANG,
+                        literal: "!".to_string(),
+                    }
                 }
             }
-            b'*' => Token::new(TokenKind::ASTERISK, String::from(self.ch as char)),
-            b'/' => Token::new(TokenKind::SLASH, String::from(self.ch as char)),
-            b'>' => Token::new(TokenKind::GT, String::from(self.ch as char)),
-            b'<' => Token::new(TokenKind::LT, String::from(self.ch as char)),
-            _ => {
-                if Self::is_letter(self.ch) {
-                    let ident = self.read_identifier();
-                    self.position -= 1;
-                    self.read_position -= 1;
-                    Token::new(lookup_ident(&ident), ident.clone())
-                } else if Self::is_digit(self.ch) {
-                    let int = self.read_number();
-                    self.position -= 1;
-                    self.read_position -= 1;
-                    Token::new(TokenKind::INT, int)
+            b'/' => Token {
+                kind: TokenKind::SLASH,
+                literal: "/".to_string(),
+            },
+            b'*' => Token {
+                kind: TokenKind::ASTERISK,
+                literal: "*".to_string(),
+            },
+            b'<' => {
+                if self.nextch_is(b'=') {
+                    self.read_char();
+                    Token {
+                        kind: TokenKind::LTE,
+                        literal: "<=".to_string(),
+                    }
                 } else {
-                    Token::new(TokenKind::EOF, " ".into())
+                    Token {
+                        kind: TokenKind::LT,
+                        literal: "<".to_string(),
+                    }
                 }
             }
+            b'>' => {
+                if self.nextch_is(b'=') {
+                    self.read_char();
+                    Token {
+                        kind: TokenKind::GTE,
+                        literal: ">=".to_string(),
+                    }
+                } else {
+                    Token {
+                        kind: TokenKind::GT,
+                        literal: ">".to_string(),
+                    }
+                }
+            }
+            b'(' => Token {
+                kind: TokenKind::LPAREN,
+                literal: "(".to_string(),
+            },
+            b')' => Token {
+                kind: TokenKind::RPAREN,
+                literal: ")".to_string(),
+            },
+            b'{' => Token {
+                kind: TokenKind::LBRACE,
+                literal: "{".to_string(),
+            },
+            b'}' => Token {
+                kind: TokenKind::RBRACE,
+                literal: "}".to_string(),
+            },
+            // b'[' => Token{kind: TokenKind::Lbracket,literal:"".to_string()},
+            // b']' => Token{kind: TokenKind::Rbracket,literal:"".to_string()},
+            b',' => Token {
+                kind: TokenKind::COMMA,
+                literal: ",".to_string(),
+            },
+            b';' => Token {
+                kind: TokenKind::SEMICOLON,
+                literal: ";".to_string(),
+            },
+            // b':' => Token{kind: TokenKind::COLON,literal:"".to_string()},
+            b'a'..=b'z' | b'A'..=b'Z' | b'_' => {
+                return self.consume_identifier();
+            }
+            b'0'..=b'9' => {
+                return self.consume_number();
+            }
+            b'"' => {
+                return self.consume_string();
+            }
+            b'\n' => {
+                if self.nextch_is(b'\n') {
+                    Token {
+                        kind: TokenKind::BLANK,
+                        literal: "\n".to_string(),
+                    }
+                } else {
+                    self.read_char();
+                    return self.next_token();
+                }
+            }
+            0 => Token {
+                kind: TokenKind::EOF,
+                literal: "EOF".to_string(),
+            },
+            _ => Token {
+                kind: TokenKind::ILLEGAL,
+                literal: "".to_string(),
+            },
         };
 
         self.read_char();
 
-        next_tok
+        return tok;
     }
 
-    fn skip_whitespace(&mut self) {
-        while self.ch == b' ' || self.ch == b'\n' || self.ch == b'\t' || self.ch == b'\r' {
-            self.read_char();
+    fn consume_identifier(&mut self) -> Token {
+        let start_pos = self.pos;
+
+        loop {
+            match self.ch {
+                b'a'..=b'z' | b'A'..=b'Z' | b'_' => {
+                    self.read_char();
+                }
+                _ => {
+                    break;
+                }
+            }
+        }
+
+        let literal = &self.input[start_pos..self.pos];
+
+        match literal {
+            "func" => Token {
+                kind: TokenKind::FUNCTION,
+                literal: "func".to_string(),
+            },
+            "let" => Token {
+                kind: TokenKind::LET,
+                literal: "let".to_string(),
+            },
+            "true" => Token {
+                kind: TokenKind::TRUE(true),
+                literal: "true".to_string(),
+            },
+            "false" => Token {
+                kind: TokenKind::FALSE(false),
+                literal: "false".to_string(),
+            },
+            "if" => Token {
+                kind: TokenKind::IF,
+                literal: "if".to_string(),
+            },
+            "else" => Token {
+                kind: TokenKind::ELSE,
+                literal: "else".to_string(),
+            },
+            "return" => Token {
+                kind: TokenKind::RETURN,
+                literal: "return".to_string(),
+            },
+            _ => Token {
+                kind: TokenKind::IDENT,
+                literal: literal.to_string(),
+            },
         }
     }
 
-    fn read_identifier(&mut self) -> String {
-        let pos = self.position;
+    fn consume_number(&mut self) -> Token {
+        let start_pos = self.pos;
 
-        while Self::is_letter(self.ch) {
-            self.read_char();
+        loop {
+            match self.ch {
+                b'0'..=b'9' => {
+                    self.read_char();
+                }
+                _ => {
+                    break;
+                }
+            }
         }
 
-        String::from(&self.input[pos..self.position])
-    }
+        let literal = &self.input[start_pos..self.pos];
 
-    fn read_number(&mut self) -> String {
-        let pos = self.position;
-
-        while Self::is_digit(self.ch) {
-            self.read_char();
+        Token {
+            kind: TokenKind::INT,
+            literal: literal.to_string(),
         }
-
-        String::from(&self.input[pos..self.position])
     }
 
-    fn is_letter(char: u8) -> bool {
-        (b'a' <= char && char <= b'z') || (b'A' <= char && char <= b'Z') || char == b'_'
-    }
+    fn consume_string(&mut self) -> Token {
+        self.read_char();
 
-    fn is_digit(char: u8) -> bool {
-        b'0' <= char && char <= b'9'
+        let start_pos = self.pos;
+
+        loop {
+            match self.ch {
+                b'"' | 0 => {
+                    let literal = &self.input[start_pos..self.pos];
+                    self.read_char();
+                    return Token {
+                        kind: TokenKind::STRING,
+                        literal: literal.to_string(),
+                    };
+                }
+                _ => {
+                    self.read_char();
+                }
+            }
+        }
     }
 }
-
 #[cfg(test)]
 mod lexer_test {
     use super::*;
@@ -240,7 +396,7 @@ mod lexer_test {
             (TokenKind::INT, "4"),
             (TokenKind::LBRACE, "{"),
             (TokenKind::RETURN, "return"),
-            (TokenKind::TRUE, "true"),
+            (TokenKind::TRUE(true), "true"),
             (TokenKind::SEMICOLON, ";"),
             (TokenKind::RBRACE, "}"),
             (TokenKind::SEMICOLON, ";"),
