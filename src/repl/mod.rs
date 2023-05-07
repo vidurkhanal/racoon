@@ -1,6 +1,6 @@
 use std::{cmp::min, io::Write};
 
-use crate::{lexer::Lexer, tkn::TokenKind};
+use crate::{lexer::Lexer, parser::Parser};
 
 pub struct REPL {
     pub command_buffer: Vec<String>,
@@ -19,6 +19,21 @@ impl REPL {
             command_buffer: vec![],
         }
     }
+
+    pub fn print_errors(&mut self, errors: &Vec<String>) {
+        let ascii_art = "   
+    /\\_/\\  
+  ( o   o )
+   =\\  /=";
+        println!(
+            "\t {} \n Racoon fell into some errors. \n \t Parser Errors:",
+            ascii_art
+        );
+        for msg in errors.iter() {
+            eprintln!("\t{}\n", msg);
+        }
+    }
+
     pub fn run(&mut self) {
         println!("Welcome to Racoon v{}!! [Rust] ", env!("CARGO_PKG_VERSION"),);
         let mut buffer = String::new();
@@ -59,11 +74,15 @@ impl REPL {
                 }
 
                 _ => {
-                    let mut l = Lexer::new(buffer);
-                    let mut tok = l.next_token();
-                    while tok.kind != TokenKind::EOF {
-                        println!("{:?}", tok);
-                        tok = l.next_token();
+                    let l = Lexer::new(buffer);
+                    let mut parser = Parser::new(l);
+                    let program = parser.parse_program();
+                    if !parser.get_errors().is_empty() {
+                        self.print_errors(parser.get_errors());
+                        continue;
+                    }
+                    for statement in program.iter() {
+                        println!("{:?}", statement);
                     }
                 }
             }

@@ -110,8 +110,8 @@ impl<'a> Parser<'a> {
             None => return None,
         };
 
-        println!("Name --> {:?}", name);
-        println!("Value --> {:?}", value);
+        // println!("Name --> {:?}", name);
+        // println!("Value --> {:?}", value);
         if self.peek_token_is(TokenKind::SEMICOLON) {
             self.next_token();
         }
