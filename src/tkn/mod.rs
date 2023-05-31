@@ -1,8 +1,5 @@
-mod keywords;
 mod token_kind;
 pub use token_kind::TokenKind;
-
-pub use keywords::lookup_ident;
 
 #[derive(Debug, PartialEq)]
 pub struct Token {

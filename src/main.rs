@@ -1,12 +1,12 @@
-pub mod ast;
+mod abstract_tree;
+mod evaluator;
 pub mod lexer;
 pub mod parser;
 mod repl;
 pub mod tkn;
 
-#[macro_use(phf_map)]
-extern crate phf;
+use repl::REPL;
 
 fn main() {
-    repl::REPL::default().run();
+    REPL::default().run();
 }
