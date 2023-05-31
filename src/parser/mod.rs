@@ -35,7 +35,7 @@ impl<'a> Parser<'a> {
             TokenKind::GT => Precedence::LessGreater,
             TokenKind::PLUS | TokenKind::MINUS => Precedence::Sum,
             TokenKind::SLASH | TokenKind::ASTERISK => Precedence::Product,
-            TokenKind::LBRACE => Precedence::Index,
+            TokenKind::LBRACKET => Precedence::Index,
             TokenKind::LPAREN => Precedence::Call,
             _ => Precedence::Lowest,
         }
@@ -72,7 +72,6 @@ impl<'a> Parser<'a> {
             let statement = self.parse_statement();
             if statement.is_some() {
                 let statement = statement.unwrap();
-                // println!("{:?}", statement);
                 program.push(statement);
             }
             self.next_token()
@@ -160,8 +159,12 @@ impl<'a> Parser<'a> {
             TokenKind::TRUE(_) | TokenKind::FALSE(_) => self.parse_bool_expr(),
             TokenKind::BANG | TokenKind::MINUS | TokenKind::PLUS => self.parse_prefix_expr(),
             TokenKind::LPAREN => self.parse_grouped_expr(),
+            TokenKind::LBRACKET => self.parse_array_expr(),
             TokenKind::IF => self.parse_if_expr(),
             TokenKind::FUNCTION => self.parse_function_expr(),
+            TokenKind::STRING => Some(Expression::Literal(Literal::String(
+                self.curr_token.literal.clone(),
+            ))),
             _ => {
                 self.errors.push(format!(
                     "No Prefix Parsing Function available for {:?}",
@@ -181,9 +184,19 @@ impl<'a> Parser<'a> {
                 | TokenKind::EQ
                 | TokenKind::NEQ
                 | TokenKind::LT
-                | TokenKind::GT => {
+                | TokenKind::GT
+                | TokenKind::LTE
+                | TokenKind::GTE => {
                     self.next_token();
                     left = self.parse_infix_expr(left.unwrap());
+                }
+                TokenKind::LPAREN => {
+                    self.next_token();
+                    left = self.parse_call_expr(left.unwrap())
+                }
+                TokenKind::LBRACKET => {
+                    self.next_token();
+                    left = self.parse_index_expr(left.unwrap())
                 }
                 _ => return left,
             }
@@ -286,7 +299,7 @@ impl<'a> Parser<'a> {
             return None;
         }
 
-        println!("Function_Body -->{:?}", self.curr_token);
+        // println!("Function_Body -->{:?}", self.curr_token);
         let function_body = self.parse_block_statement();
 
         Some(Expression::Function {
@@ -383,6 +396,105 @@ impl<'a> Parser<'a> {
         }
 
         block
+    }
+
+    fn parse_call_expr(&mut self, left: Expression) -> Option<Expression> {
+        let args = self.parse_expr_list(TokenKind::RPAREN);
+
+        Some(Expression::Call {
+            func: Box::new(left),
+            args,
+        })
+    }
+
+    fn parse_index_expr(&mut self, left: Expression) -> Option<Expression> {
+        self.next_token();
+
+        let index = match self.parse_expression(Precedence::Lowest) {
+            Some(expr) => expr,
+            None => return None,
+        };
+
+        if !self.expect_peek(TokenKind::RBRACKET) {
+            return None;
+        }
+
+        let res = Expression::Index(Box::new(left), Box::new(index));
+        // println!("{:?}", res);
+        Some(res)
+    }
+
+    // pub fn parse_call_args(&mut self) -> Option<Vec<Expression>> {
+    //     let mut args: Vec<Expression> = vec![];
+    //     if self.peek_token_is(TokenKind::RPAREN) {
+    //         self.next_token();
+    //         return Some(args);
+    //     }
+
+    //     self.next_token();
+
+    //     match self.parse_expression(Precedence::Lowest) {
+    //         Some(expr) => args.push(expr),
+    //         None => return None,
+    //     }
+    //     while self.peek_token_is(TokenKind::COMMA) {
+    //         self.next_token();
+    //         self.next_token();
+
+    //         match self.parse_expression(Precedence::Lowest) {
+    //             Some(expr) => args.push(expr),
+    //             None => return None,
+    //         }
+    //     }
+
+    //     if !self.expect_peek(TokenKind::RPAREN) {
+    //         return None;
+    //     }
+
+    //     Some(args)
+    // }
+
+    fn parse_array_expr(&mut self) -> Option<Expression> {
+        match self.parse_expr_list(TokenKind::RBRACKET) {
+            Some(list) => Some(Expression::Literal(Literal::Array(list))),
+            None => None,
+        }
+    }
+
+    fn parse_expr_list(&mut self, end_token: TokenKind) -> Option<Vec<Expression>> {
+        let mut list = vec![];
+
+        if self.peek_token_is(end_token) {
+            self.next_token();
+            return Some(list);
+        }
+
+        self.next_token();
+
+        match self.parse_expression(Precedence::Lowest) {
+            Some(expr) => {
+                list.push(expr);
+            }
+            None => return None,
+        }
+
+        while self.peek_token_is(TokenKind::COMMA) {
+            self.next_token();
+            self.next_token();
+
+            match self.parse_expression(Precedence::Lowest) {
+                Some(expr) => {
+                    list.push(expr);
+                }
+                None => return None,
+            }
+        }
+
+        if !self.expect_peek(end_token) {
+            return None;
+        }
+
+        Some(list)
     }
 
     fn expect_peek(&mut self, token_kind: TokenKind) -> bool {
@@ -685,5 +797,30 @@ mod parser_test {
             program.len()
         );
         println!("{:?}", program);
+    }
+
+    #[test]
+    fn test_call_expr() {
+        let l = Lexer::new(
+            "
+        [1,2,3,4][1];
+        ",
+        );
+        let mut p = Parser::new(l);
+
+        let program = p.parse_program();
+        println!("{:?}", program);
+
+        assert_ne!(
+            program.len(),
+            0,
+            "Parse Error: Couldn't parse the given expression."
+        );
+        assert_eq!(
+            program.len(),
+            1,
+            "Expected 1 statement, instead received {}",
+            program.len()
+        );
     }
 }

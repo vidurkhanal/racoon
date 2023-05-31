@@ -148,8 +148,14 @@ impl<'a> Lexer<'a> {
                 kind: TokenKind::RBRACE,
                 literal: "}".to_string(),
             },
-            // b'[' => Token{kind: TokenKind::Lbracket,literal:"".to_string()},
-            // b']' => Token{kind: TokenKind::Rbracket,literal:"".to_string()},
+            b'[' => Token {
+                kind: TokenKind::LBRACKET,
+                literal: "[".to_string(),
+            },
+            b']' => Token {
+                kind: TokenKind::RBRACKET,
+                literal: "]".to_string(),
+            },
             b',' => Token {
                 kind: TokenKind::COMMA,
                 literal: ",".to_string(),
@@ -239,6 +245,7 @@ impl<'a> Lexer<'a> {
                 kind: TokenKind::RETURN,
                 literal: "return".to_string(),
             },
+
             _ => Token {
                 kind: TokenKind::IDENT,
                 literal: literal.to_string(),
@@ -456,6 +463,40 @@ mod lexer_test {
                 tok.kind, tt.0,
                 "tests[{0}] - tokentype wrong. expected={1:?}, got={2:?}",
                 i, tt.0, tok.kind
+            );
+            assert_eq!(
+                tok.literal, tt.1,
+                "tests[{}] - literal wrong. expected={}, got={}",
+                i, tt.1, tok.literal
+            );
+        }
+    }
+
+    #[test]
+    fn test_string() {
+        let input = "
+            \"foobar\"
+            [1,2]
+        ";
+        let tests = vec![
+            (TokenKind::STRING, "foobar"),
+            (TokenKind::LBRACKET, "["),
+            (TokenKind::INT, "1"),
+            (TokenKind::COMMA, ","),
+            (TokenKind::INT, "2"),
+            (TokenKind::RBRACKET, "]"),
+        ];
+        let mut l = Lexer::new(input);
+        for (i, tt) in tests.iter().enumerate() {
+            let tok = l.next_token();
+            println!("TOKEN--> {:#?}", tok);
+            assert_eq!(
+                tok.kind,
+                tt.0,
+                "tests[{0}] - tokentype wrong. expected={1:?}, got={2}",
+                i,
+                tt.0,
+                tok.kind.to_string()
             );
             assert_eq!(
                 tok.literal, tt.1,

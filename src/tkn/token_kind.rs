@@ -1,4 +1,6 @@
-#[derive(Debug, Eq, Hash, PartialEq, Clone, Copy)]
+use std::fmt::Display;
+
+#[derive(Eq, Hash, PartialEq, Clone, Copy, Debug)]
 pub enum TokenKind {
     ILLEGAL,
     EOF,
@@ -12,10 +14,13 @@ pub enum TokenKind {
     SLASH,
     COMMA,
     SEMICOLON,
+    COLON,
     LPAREN,
     RPAREN,
     LBRACE,
     RBRACE,
+    LBRACKET,
+    RBRACKET,
     FUNCTION,
     LET,
     LT,
@@ -31,4 +36,44 @@ pub enum TokenKind {
     NEQ,
     BLANK,
     STRING,
+}
+impl Display for TokenKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            TokenKind::ILLEGAL => f.write_str("ILLEGAL"),
+            TokenKind::EOF => f.write_str("EOF"),
+            TokenKind::IDENT => f.write_str("IDENT"),
+            TokenKind::INT => f.write_str("INT"),
+            TokenKind::ASSIGN => f.write_str("="),
+            TokenKind::PLUS => f.write_str("+"),
+            TokenKind::MINUS => f.write_str("-"),
+            TokenKind::BANG => f.write_str("!"),
+            TokenKind::ASTERISK => f.write_str("*"),
+            TokenKind::SLASH => f.write_str("/"),
+            TokenKind::COMMA => f.write_str(","),
+            TokenKind::SEMICOLON => f.write_str(";"),
+            TokenKind::COLON => f.write_str(":"),
+            TokenKind::LPAREN => f.write_str("("),
+            TokenKind::RPAREN => f.write_str(")"),
+            TokenKind::LBRACE => f.write_str("{"),
+            TokenKind::RBRACE => f.write_str("}"),
+            TokenKind::LBRACKET => f.write_str("["),
+            TokenKind::RBRACKET => f.write_str("]"),
+            TokenKind::FUNCTION => f.write_str("fn"),
+            TokenKind::LET => f.write_str("let"),
+            TokenKind::LT => f.write_str("<"),
+            TokenKind::LTE => f.write_str("<="),
+            TokenKind::GT => f.write_str(">"),
+            TokenKind::GTE => f.write_str(">="),
+            TokenKind::TRUE(value) => write!(f, "true({})", value),
+            TokenKind::FALSE(value) => write!(f, "false({})", value),
+            TokenKind::IF => f.write_str("if"),
+            TokenKind::ELSE => f.write_str("else"),
+            TokenKind::RETURN => f.write_str("return"),
+            TokenKind::EQ => f.write_str("=="),
+            TokenKind::NEQ => f.write_str("!="),
+            TokenKind::BLANK => f.write_str(""),
+            TokenKind::STRING => f.write_str("STRING"),
+        }
+    }
 }

@@ -18,6 +18,7 @@ pub enum Expression {
     Literal(Literal),
     Prefix(Prefix, Box<Expression>),
     Infix(Infix, Box<Expression>, Box<Expression>),
+    Index(Box<Expression>, Box<Expression>),
     If {
         condition: Box<Expression>,
         consequence: BlockOfStatements,
@@ -30,7 +31,7 @@ pub enum Expression {
     },
     Call {
         func: Box<Expression>,
-        args: Vec<Expression>,
+        args: Option<Vec<Expression>>,
     },
 }
 
